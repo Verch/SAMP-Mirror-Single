@@ -7,9 +7,9 @@ set(cmake_runtime_output_directory ${CMAKE_HOME_DIRECTORY}/bin)
 project(MirrorSync)
 
 file( GLOB SOURCE_CODE
-	source\main.cpp
-	source\vehicle.h
-	source\vehicle.cpp
+	source/main.cpp
+	source/vehicle.h
+	source/vehicle.cpp
 )
 source_group("" FILES ${SOURCE_CODE})
 
@@ -17,7 +17,7 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     ON)
 
-find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
+#find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 
 #if(Boost_FOUND)
 	if(MSVC)
@@ -39,7 +39,7 @@ find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 	add_definitions("-static-libgcc")
 	add_definitions("-static-libstdc++")
 
-	include_directories(${Boost_INCLUDE_DIR})
+	#include_directories(${Boost_INCLUDE_DIR})
 	add_executable(MirrorSync ${SOURCE_CODE})
-	target_link_libraries(MirrorSync ${Boost_LIBRARIES})
+	#target_link_libraries(MirrorSync ${Boost_LIBRARIES})
 #endif()
