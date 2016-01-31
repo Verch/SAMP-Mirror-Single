@@ -10,6 +10,8 @@ file( GLOB SOURCE_CODE
 	source/main.cpp
 	source/vehicle.h
 	source/vehicle.cpp
+	source/vehicle_manager.h
+	source/vehicle_manager.cpp
 )
 source_group("" FILES ${SOURCE_CODE})
 
@@ -17,9 +19,9 @@ set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     ON)
 
-#find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
+find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
 
-#if(Boost_FOUND)
+if(Boost_FOUND)
 	if(MSVC)
 		if (COMMAND cmake_policy)
 		CMAKE_POLICY(SET CMP0003 NEW)
@@ -39,7 +41,7 @@ set(Boost_USE_STATIC_RUNTIME     ON)
 	add_definitions("-static-libgcc")
 	add_definitions("-static-libstdc++")
 
-	#include_directories(${Boost_INCLUDE_DIR})
+	include_directories(${Boost_INCLUDE_DIR})
 	add_executable(MirrorSync ${SOURCE_CODE})
-	#target_link_libraries(MirrorSync ${Boost_LIBRARIES})
-#endif()
+	target_link_libraries(MirrorSync ${Boost_LIBRARIES})
+endif()
