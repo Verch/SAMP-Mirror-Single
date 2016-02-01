@@ -18,8 +18,8 @@ source_group("" FILES ${SOURCE_CODE})
 set(Boost_USE_STATIC_LIBS        ON)
 set(Boost_USE_MULTITHREADED      ON)
 set(Boost_USE_STATIC_RUNTIME     ON)
-
-find_package(Boost COMPONENTS system filesystem program_options REQUIRED)
+ 
+find_package(Boost COMPONENTS system filesystem program_options date_time regex thread chrono REQUIRED)
 
 if(Boost_FOUND)
 	if(MSVC)
