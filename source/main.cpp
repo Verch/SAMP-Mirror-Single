@@ -1,12 +1,10 @@
-//udp_sync_echo_server.cpp
-#include <iostream>
-using namespace std;
-
 #ifdef WIN32
 #define _WIN32_WINNT 0x0501
 #include <stdio.h>
 #endif
 
+
+#include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
@@ -14,221 +12,151 @@ using namespace std;
 using namespace boost::asio;
 using namespace boost::posix_time;
 io_service service;
-void handle_connections() {
-	char buff[1024];
-	ip::udp::socket sock(service, ip::udp::endpoint(ip::udp::v4(), 8001));
+
+struct talk_to_client;
+typedef boost::shared_ptr<talk_to_client> client_ptr;
+typedef std::vector<client_ptr> array;
+array clients;
+// thread-safe access to clients array
+boost::recursive_mutex cs;
+
+void update_clients_changed();
+
+/** simple connection to server:
+- logs in just with username (no password)
+- all connections are initiated by the client: client asks, server answers
+- server disconnects any client that hasn't pinged for 5 seconds
+
+Possible requests:
+- gets a list of all connected clients
+- ping: the server answers either with "ping ok" or "ping client_list_changed"
+*/
+struct talk_to_client : boost::enable_shared_from_this<talk_to_client> {
+	talk_to_client()
+		: sock_(service), started_(false), already_read_(0) {
+		last_ping = microsec_clock::local_time();
+	}
+	std::string username() const { return username_; }
+
+	void answer_to_client() {
+		try {
+			read_request();
+			process_request();
+		}
+		catch (boost::system::system_error&) {
+			stop();
+		}
+		if (timed_out()) {
+			stop();
+			std::cout << "stopping " << username_ << " - no ping in time" << std::endl;
+		}
+	}
+	void set_clients_changed() { clients_changed_ = true; }
+	ip::tcp::socket & sock() { return sock_; }
+	bool timed_out() const {
+		ptime now = microsec_clock::local_time();
+		long long ms = (now - last_ping).total_milliseconds();
+		return ms > 5000;
+	}
+	void stop() {
+		// close client connection
+		boost::system::error_code err;
+		sock_.close(err);
+	}
+private:
+	void read_request() {
+		if (sock_.available())
+			already_read_ += sock_.read_some(
+			buffer(buff_ + already_read_, max_msg - already_read_));
+	}
+	void process_request() {
+		bool found_enter = std::find(buff_, buff_ + already_read_, '\n')
+			< buff_ + already_read_;
+		if (!found_enter)
+			return; // message is not full
+		// process the msg
+		last_ping = microsec_clock::local_time();
+		size_t pos = std::find(buff_, buff_ + already_read_, '\n') - buff_;
+		std::string msg(buff_, pos);
+		std::copy(buff_ + already_read_, buff_ + max_msg, buff_);
+		already_read_ -= pos + 1;
+
+		if (msg.find("login ") == 0) on_login(msg);
+		else if (msg.find("ping") == 0) on_ping();
+		else if (msg.find("ask_clients") == 0) on_clients();
+		else std::cerr << "invalid msg " << msg << std::endl;
+	}
+
+	void on_login(const std::string & msg) {
+		std::istringstream in(msg);
+		in >> username_ >> username_;
+		std::cout << username_ << " logged in" << std::endl;
+		write("login ok\n");
+		update_clients_changed();
+	}
+	void on_ping() {
+		write(clients_changed_ ? "ping client_list_changed\n" : "ping ok\n");
+		clients_changed_ = false;
+	}
+	void on_clients() {
+		std::string msg;
+		{ boost::recursive_mutex::scoped_lock lk(cs);
+		for (array::const_iterator b = clients.begin(), e = clients.end(); b != e; ++b)
+			msg += (*b)->username() + " ";
+		}
+		write("clients " + msg + "\n");
+	}
+
+
+	void write(const std::string & msg) {
+		sock_.write_some(buffer(msg));
+	}
+private:
+	ip::tcp::socket sock_;
+	enum { max_msg = 1024 };
+	int already_read_;
+	char buff_[max_msg];
+	bool started_;
+	std::string username_;
+	bool clients_changed_;
+	ptime last_ping;
+};
+
+void update_clients_changed() {
+	boost::recursive_mutex::scoped_lock lk(cs);
+	for (array::iterator b = clients.begin(), e = clients.end(); b != e; ++b)
+		(*b)->set_clients_changed();
+}
+
+
+
+void accept_thread() {
+	ip::tcp::acceptor acceptor(service, ip::tcp::endpoint(ip::tcp::v4(), 8001));
 	while (true) {
-		ip::udp::endpoint sender_ep;
-		int bytes = sock.receive_from(buffer(buff), sender_ep);
-		std::string msg(buff, bytes);
-		sock.send_to(buffer(msg), sender_ep);
+		client_ptr new_(new talk_to_client);
+		acceptor.accept(new_->sock());
+
+		boost::recursive_mutex::scoped_lock lk(cs);
+		clients.push_back(new_);
 	}
 }
+
+void handle_clients_thread() {
+	while (true) {
+		boost::this_thread::sleep(millisec(1));
+		boost::recursive_mutex::scoped_lock lk(cs);
+		for (array::iterator b = clients.begin(), e = clients.end(); b != e; ++b)
+			(*b)->answer_to_client();
+		// erase clients that timed out
+		clients.erase(std::remove_if(clients.begin(), clients.end(),
+			boost::bind(&talk_to_client::timed_out, _1)), clients.end());
+	}
+}
+
 int main(int argc, char* argv[]) {
-	std::cout << "udp_sync_echo_server.cpp port 8001" << endl;
-	handle_connections();
-}
-
-
-
-
-
-
-
-
-
-
-
-//#define BOOST_ASIO_SEPARATE_COMPILATION 
-/*
-
-#include <boost/thread.hpp>
-#include <boost/bind.hpp>
-#include <boost/asio.hpp>
-#include <iostream>
-
-using namespace std;
-using namespace boost::asio;
-//io_service service;
-*/
-
-
-
-
-
-
-
-/*// Асинхроный вызов
-void func(int i)
-{
-	std::cout << "func called, i= " << i << std::endl;
-}
-void worker_thread()
-{
-	service.run();
-}
-
-int main(int argc, char* argv[])
-{
-	for (int i = 0; i < 10; ++i)
-		service.post(boost::bind(func, i));
-
 	boost::thread_group threads;
-	for (int i = 0; i < 3; ++i)
-		threads.create_thread(worker_thread);
-	// wait for all threads to be created
-	boost::this_thread::sleep(boost::posix_time::millisec(500));
+	threads.create_thread(accept_thread);
+	threads.create_thread(handle_clients_thread);
 	threads.join_all();
-	system("pause");
-}
-*/
-
-
-/*// асинхроный последовательный вызов 
-void func(int i)
-{
-	std::cout << "func called, i= " << i << "/" << boost::this_thread::get_id() << std::endl;
-}
-void worker_thread()
-{
-	service.run();
-}
-int main(int argc, char* argv[])
-{
-	io_service::strand strand_one(service), strand_two(service);
-	for (int i = 0; i < 5; ++i)
-		service.post(strand_one.wrap(boost::bind(func, i)));
-	
-	for (int i = 5; i < 10; ++i)
-		service.post(strand_two.wrap(boost::bind(func, i)));
-	
-	boost::thread_group threads;
-	for (int i = 0; i < 3; ++i)
-		threads.create_thread(worker_thread);	// wait for all threads to be created
-
-	boost::this_thread::sleep(boost::posix_time::millisec(500));
-	threads.join_all();
-
-	system("pause");
-	return 1;
-}*/
-
-
-
-
-/*//посмотрим как service.dispatch влияет на результат :
-void func(int i)
-{
-	std::cout << "func called, i= " << i << std::endl;
 }
 
-void run_dispatch_and_post()
-{
-	for (int i = 0; i < 10; i += 2)
-	{
-		service.dispatch(boost::bind(func, i));
-		service.post(boost::bind(func, i + 1));
-	}
-}
-int main(int argc, char* argv[])
-{
-	service.post(run_dispatch_and_post);
-	service.run();
-	system("pause");
-	return 0;
-}*/
-
-
-
-
-
-
-/*//Теперь давайте поговорим об service.wrap(handler).wrap() возвращает функтор, который может быть использован 
-//в качестве аргумента другой функции :
-void dispatched_func_1()
-{
-	std::cout << "dispatched 1" << std::endl;
-}
-void dispatched_func_2()
-{
-	std::cout << "dispatched 2" << std::endl;
-}
-void test(boost::function<void()> func)
-{
-	std::cout << "test" << std::endl;
-	service.dispatch(dispatched_func_1);
-	func();
-}
-void service_run()
-{
-	service.run();
-}
-int main(int argc, char* argv[])
-{
-	test(service.wrap(dispatched_func_2));
-	boost::thread th(service_run);
-	boost::this_thread::sleep(boost::posix_time::millisec(500));
-	th.join();
-	system("pause");
-	return 0; 
-}*/
-
-
-
-//Следующий код это простой асинхронный сервер :
-/*using boost::asio;
-typedef boost::shared_ptr<ip::tcp::socket> socket_ptr;
-io_service service;
-ip::tcp::endpoint ep(ip::tcp::v4(), 2001)); // listen on 2001
-ip::tcp::acceptor acc(service, ep);
-socket_ptr sock(new ip::tcp::socket(service));
-start_accept(sock);
-service.run();
-void start_accept(socket_ptr sock)
-{
-	acc.async_accept(*sock, boost::bind(handle_accept, sock, _1));
-}
-void handle_accept(socket_ptr sock, const boost::system::error_code & err)
-{
-	if (err) return;
-	// at this point, you can read/write to the socket
-	socket_ptr sock(new ip::tcp::socket(service));
-	start_accept(sock);
-}*/
-
-
-//-------------------------------------
-
- /*Например, следующее сообщение от вашего партнера должно прийти к вам через 100 миллисекунд:
-
-bool read = false;
-void deadline_handler(const boost::system::error_code &) 
-{
-    std::cout << (read ? "read successfully" : "read failed") << std::endl;
-}
-void read_handler(const boost::system::error_code &) 
-{
-    read = true;
-}
-ip::tcp::socket sock(service);
-…
-read = false;
-char data[512];
-sock.async_read_some(buffer(data, 512));
-deadline_timer t(service, boost::posix_time::milliseconds(100));
-t.async_wait(&deadline_handler);
-service.run();
-*/
-
-
-/*
-.run() всегда будет закончен, если больше нет операций для контроля
-Если вы хотите, чтобы service.run() продолжил работать, вы должны предоставить ему больше работы. 
-решения данной проблемы.  является увеличение нагрузки на connect_handler, запустив еще одну асинхронную операцию.
-Второй способ заключается в имитации некоторой его работы, используя следующий код:
-typedef boost::shared_ptr<io_service::work> work_ptr;
-work_ptr dummy_work(new io_service::work(service_));
-
-Приведенный выше код обеспечит постоянную работу service_.run() до тех пор пока вы не вызовете 
-useservice_.stop() или dummy_work.reset(0); // destroy dummy_work.
-*/
