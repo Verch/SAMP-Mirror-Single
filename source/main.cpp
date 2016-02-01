@@ -1,5 +1,47 @@
+//udp_sync_echo_server.cpp
+#include <iostream>
+using namespace std;
+
+#ifdef WIN32
+#define _WIN32_WINNT 0x0501
+#include <stdio.h>
+#endif
+
+#include <boost/bind.hpp>
+#include <boost/asio.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+using namespace boost::asio;
+using namespace boost::posix_time;
+io_service service;
+void handle_connections() {
+	char buff[1024];
+	ip::udp::socket sock(service, ip::udp::endpoint(ip::udp::v4(), 8001));
+	while (true) {
+		ip::udp::endpoint sender_ep;
+		int bytes = sock.receive_from(buffer(buff), sender_ep);
+		std::string msg(buff, bytes);
+		sock.send_to(buffer(msg), sender_ep);
+	}
+}
+int main(int argc, char* argv[]) {
+	std::cout << "udp_sync_echo_server.cpp port 8001" << endl;
+	handle_connections();
+}
+
+
+
+
+
+
+
+
+
+
+
 //#define BOOST_ASIO_SEPARATE_COMPILATION 
- 
+/*
+
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
@@ -7,51 +49,129 @@
 
 using namespace std;
 using namespace boost::asio;
-io_service service;
-ip::tcp::socket sock(service);
-
-
-
-
-
-char buff_read[1024], buff_write[1024] = "ok";
-void on_read(const boost::system::error_code &err, std::size_t bytes);
-void on_write(const boost::system::error_code &err, std::size_t bytes)
-{
-	sock.async_read_some(buffer(buff_read), on_read);
-}
-void on_read(const boost::system::error_code &err, std::size_t bytes)
-{
-	// ... process the read ...
-	sock.async_write_some(buffer(buff_write, 3), on_write);
-}
-void on_connect(const boost::system::error_code &err)
-{
-	sock.async_read_some(buffer(buff_read), on_read);
-}
-
-
-
-/*
-Когда вызывается service.run(), то в ожидании находится хотя бы одна асинхронная операция. 
-Когда сокет подключается к серверу, вызывается on_connect, которая добавляет еще одну асинхронную операцию. 
-После окончания работы on_connect у нас остается одна запланированная операция (read). Когда завершается 
-операция on_read, пишем ответ, добавляется еще одна запланированная операция(write). Когда вызывается 
-функция on_write, мы читаем следующее сообщение от сервера, который будет добавлять еще одну запланированную 
-операцию. Когда завершается функция on_write у нас есть одна запланированная операция (read). И так цикл 
-продолжается, пока мы не решим закрыть приложение.
+//io_service service;
 */
-int main(int argc, char* argv[])
+
+
+
+
+
+
+
+/*// Асинхроный вызов
+void func(int i)
 {
-	setlocale(LC_ALL, "Russian");
-	std::cout << "что к чему" << endl;
-	ip::tcp::endpoint ep(ip::address::from_string("127.0.0.1"), 2001);
-	sock.async_connect(ep, on_connect);
+	std::cout << "func called, i= " << i << std::endl;
+}
+void worker_thread()
+{
 	service.run();
 }
 
+int main(int argc, char* argv[])
+{
+	for (int i = 0; i < 10; ++i)
+		service.post(boost::bind(func, i));
+
+	boost::thread_group threads;
+	for (int i = 0; i < 3; ++i)
+		threads.create_thread(worker_thread);
+	// wait for all threads to be created
+	boost::this_thread::sleep(boost::posix_time::millisec(500));
+	threads.join_all();
+	system("pause");
+}
+*/
 
 
+/*// асинхроный последовательный вызов 
+void func(int i)
+{
+	std::cout << "func called, i= " << i << "/" << boost::this_thread::get_id() << std::endl;
+}
+void worker_thread()
+{
+	service.run();
+}
+int main(int argc, char* argv[])
+{
+	io_service::strand strand_one(service), strand_two(service);
+	for (int i = 0; i < 5; ++i)
+		service.post(strand_one.wrap(boost::bind(func, i)));
+	
+	for (int i = 5; i < 10; ++i)
+		service.post(strand_two.wrap(boost::bind(func, i)));
+	
+	boost::thread_group threads;
+	for (int i = 0; i < 3; ++i)
+		threads.create_thread(worker_thread);	// wait for all threads to be created
+
+	boost::this_thread::sleep(boost::posix_time::millisec(500));
+	threads.join_all();
+
+	system("pause");
+	return 1;
+}*/
+
+
+
+
+/*//посмотрим как service.dispatch влияет на результат :
+void func(int i)
+{
+	std::cout << "func called, i= " << i << std::endl;
+}
+
+void run_dispatch_and_post()
+{
+	for (int i = 0; i < 10; i += 2)
+	{
+		service.dispatch(boost::bind(func, i));
+		service.post(boost::bind(func, i + 1));
+	}
+}
+int main(int argc, char* argv[])
+{
+	service.post(run_dispatch_and_post);
+	service.run();
+	system("pause");
+	return 0;
+}*/
+
+
+
+
+
+
+/*//Теперь давайте поговорим об service.wrap(handler).wrap() возвращает функтор, который может быть использован 
+//в качестве аргумента другой функции :
+void dispatched_func_1()
+{
+	std::cout << "dispatched 1" << std::endl;
+}
+void dispatched_func_2()
+{
+	std::cout << "dispatched 2" << std::endl;
+}
+void test(boost::function<void()> func)
+{
+	std::cout << "test" << std::endl;
+	service.dispatch(dispatched_func_1);
+	func();
+}
+void service_run()
+{
+	service.run();
+}
+int main(int argc, char* argv[])
+{
+	test(service.wrap(dispatched_func_2));
+	boost::thread th(service_run);
+	boost::this_thread::sleep(boost::posix_time::millisec(500));
+	th.join();
+	system("pause");
+	return 0; 
+}*/
 
 
 
