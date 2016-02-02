@@ -15,13 +15,15 @@ file( GLOB SOURCE_CODE
 )
 source_group("" FILES ${SOURCE_CODE})
 
-set(Boost_USE_STATIC_LIBS        ON)
-set(Boost_USE_MULTITHREADED      ON)
-set(Boost_USE_STATIC_RUNTIME     ON)
+option(Boost_USE_STATIC_LIBS    "Set to ON to force the use of the static libraries."                                                  ON)
+option(Boost_USE_MULTITHREADED  "Set to OFF to use the non-multithreaded libraries                                         ('mt' tag)" ON)  
+option(Boost_USE_STATIC_RUNTIME "Set to ON or OFF to specify whether to use libraries linked statically to the C++ runtime ('s' tag) " ON)
+option(Boost_USE_DEBUG_RUNTIME  "Set to ON or OFF to specify whether to use libraries linked to the MS debug C++ runtime   ('g' tag) " ON)
  
 find_package(Boost COMPONENTS system filesystem program_options date_time regex thread chrono REQUIRED)
 
 if(Boost_FOUND)
+
 	if(MSVC)
 		if (COMMAND cmake_policy)
 		CMAKE_POLICY(SET CMP0003 NEW)
@@ -33,14 +35,16 @@ if(Boost_FOUND)
 		add_definitions(-D _CRT_SECURE_NO_WARNINGS)
 		add_definitions(/sdl /EHsc /Od /RTC1 /GS)
 	endif()
-    
-	add_definitions("-std=c++11")
-	add_definitions("-O3")
 
-	add_definitions("-static")
-	add_definitions("-static-libgcc")
-	add_definitions("-static-libstdc++")
+    if(UNIX)
+        add_definitions("-std=c++11")
+        add_definitions("-O3")
 
+        add_definitions("-static")
+        add_definitions("-static-libgcc")
+        add_definitions("-static-libstdc++")
+    endif()
+	
 	include_directories(${Boost_INCLUDE_DIR})
 	add_executable(MirrorSync ${SOURCE_CODE})
 	target_link_libraries(MirrorSync ${Boost_LIBRARIES})
