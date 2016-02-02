@@ -3,6 +3,10 @@
 #include <stdio.h>
 #endif
 
+#include <iostream>
+using namespace std;
+
+
 
 #include <boost/thread.hpp>
 #include <boost/bind.hpp>
@@ -22,15 +26,8 @@ boost::recursive_mutex cs;
 
 void update_clients_changed();
 
-/** simple connection to server:
-- logs in just with username (no password)
-- all connections are initiated by the client: client asks, server answers
-- server disconnects any client that hasn't pinged for 5 seconds
 
-Possible requests:
-- gets a list of all connected clients
-- ping: the server answers either with "ping ok" or "ping client_list_changed"
-*/
+
 struct talk_to_client : boost::enable_shared_from_this<talk_to_client> {
 	talk_to_client()
 		: sock_(service), started_(false), already_read_(0) {
@@ -153,10 +150,12 @@ void handle_clients_thread() {
 	}
 }
 
+
 int main(int argc, char* argv[]) {
-	boost::thread_group threads;
+	/*boost::thread_group threads;
 	threads.create_thread(accept_thread);
 	threads.create_thread(handle_clients_thread);
-	threads.join_all();
+	threads.join_all();*/
+	int y; cin >> y;
 }
 
