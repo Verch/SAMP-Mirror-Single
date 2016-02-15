@@ -38,10 +38,10 @@ struct talk_to_client : boost::enable_shared_from_this<talk_to_client> {
 		{
 			stop();
 		}
-		/*if (timed_out()) {
+		if (timed_out()) {
 		stop();
 		std::cout << "stopping " << username_ << " - no ping in time" << std::endl;
-		}*/
+		} 
 	}
 	void set_clients_changed() { clients_changed_ = true; }
 	ip::tcp::socket & sock() { return sock_; }
@@ -49,13 +49,13 @@ struct talk_to_client : boost::enable_shared_from_this<talk_to_client> {
 	{
 		ptime now = microsec_clock::local_time();
 		long long ms = (now - last_ping).total_milliseconds();
-		return ms > 5000;
+		return ms > 15000;
 	}
 	void stop() {
 		// close client connection
 		boost::system::error_code err;
 		sock_.close(err);
-		std::cerr << "\nuser zdoh?\n";
+		std::cerr << "\nuser zdoh!\n";
 	}
 private:
 	void read_request() {
@@ -77,12 +77,11 @@ private:
 
 		std::cerr << "<-" << msg << std::endl;
 		write(msg + '\n');
-		//on_ping();
 		if (msg.find("login ") == 0) on_login(msg);
-		else if (msg.find("message ") == 0) std::cerr << msg << std::endl;
 		else if (msg.find("ping") == 0) on_ping();
 		else if (msg.find("ask_clients") == 0) on_clients();
-		//else std::cerr << "invalid msg " << msg << std::endl;
+		else {}//std::cerr << "invalid msg " << msg << std::endl;
+
 
 	}
 
@@ -151,7 +150,8 @@ void handle_clients_thread() {
 			(*b)->answer_to_client();
 
 		// erase clients that timed out
-		//clients.erase(std::remove_if(clients.begin(), clients.end(),boost::bind(&talk_to_client::timed_out, _1)), clients.end());
+		
+		clients.erase(std::remove_if(clients.begin(), clients.end(),boost::bind(&talk_to_client::timed_out, _1)), clients.end());
 	}
 }
 
