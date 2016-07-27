@@ -8,10 +8,8 @@ project(MirrorSync)
 
 file( GLOB SOURCE_CODE
 	source/main.cpp
-	source/vehicle.h
-	source/vehicle.cpp
-	source/vehicle_manager.h
-	source/vehicle_manager.cpp
+	source/udpserver.cpp
+	source/udpserver.h
 )
 source_group("" FILES ${SOURCE_CODE})
 
