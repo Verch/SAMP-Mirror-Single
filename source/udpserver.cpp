@@ -4,22 +4,22 @@
 #include <string>
 #include <iostream>
 #include <functional>
-  
+
 #include <boost/array.hpp>
 #include <boost/asio.hpp>
- #include <exception>
+#include <exception>
 
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
- 
+
 #include "udpserver.h"
 
 
 using namespace boost::posix_time;	//for millisec
 using boost::asio::ip::udp;
- 
+
 cUDP_Server::cUDP_Server(boost::asio::io_service& io_service) :
 socket_(io_service, udp::endpoint(udp::v4(), 7777))
 {
@@ -77,6 +77,9 @@ void cUDP_Server::recov()
 {
 	try
 	{
+		int _forAitoaRadix = 10;
+		char _forbuffer[20];
+
 		char buff[1024];
 		boost::asio::ip::udp::endpoint remote_endpoint;
 
@@ -91,7 +94,12 @@ void cUDP_Server::recov()
 		refresh_map_remote_endpoint(remote_endpoint);
 		refreshMapPingByIp(remote_endpoint);
 
-		sendAll(msg);
+		// Separator for transmission in the same package more than two responses from different 
+
+		char *p = _itoa(remote_endpoint.port(), _forbuffer, _forAitoaRadix);
+		std::string PAKET = (std::string)p + " " + msg + ";";
+
+		sendAll(PAKET);
 		//-----------------------------------------------------------------------------------
 	}
 	catch (std::exception &e)
