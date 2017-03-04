@@ -4,12 +4,36 @@ set(cmake_archive_output_directory ${CMAKE_HOME_DIRECTORY}/bin)
 set(cmake_library_output_directory ${CMAKE_HOME_DIRECTORY}/bin)
 set(cmake_runtime_output_directory ${CMAKE_HOME_DIRECTORY}/bin)
 
-project(MirrorSync)
+project(MirrorSync3)
 
 file( GLOB SOURCE_CODE
-	source/main.cpp
+	 	source/main.cpp
 	source/udpserver.cpp
 	source/udpserver.h
+	source/compute.cpp
+	source/compute.h
+	source/dataAnswer.cpp
+	source/dataAnswer.h
+	source/DataBase.cpp
+	source/DataBase.h
+	source/GameLogic.cpp
+	source/GameLogic.h
+	source/GameObject_List.cpp
+	source/GameObject_List.h
+	source/Logic.cpp
+	source/Logic.h
+	source/MyUtiles.cpp
+	source/MyUtiles.h
+	source/PackageRules.cpp
+	source/PlayerManager.cpp
+	source/PlayerManager.h
+	source/VehicleManager.cpp
+	source/VehicleManager.h
+	source/sender.cpp
+	source/sender.h
+	source/EventManager.cpp
+	source/EventManager.h
+	source/PackageType.h
 )
 source_group("" FILES ${SOURCE_CODE})
 
@@ -44,6 +68,6 @@ if(Boost_FOUND)
     endif()
 	
 	include_directories(${Boost_INCLUDE_DIR})
-	add_executable(MirrorSync ${SOURCE_CODE})
-	target_link_libraries(MirrorSync ${Boost_LIBRARIES})
+	add_executable(MirrorSync3 ${SOURCE_CODE})
+	target_link_libraries(MirrorSync3 ${Boost_LIBRARIES})
 endif()

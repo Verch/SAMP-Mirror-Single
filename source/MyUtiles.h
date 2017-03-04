@@ -14,9 +14,17 @@ public:
 	 
 	std::string IntToHEX(int);
 	std::string floatToHEX(float);
-	
+	 
+	std::string unsignetIntToHEX(unsigned int Val);
+
 private:
 
 };
  
+
+std::string  getMeDirectory();
+
+void Log(const char *fmt, ...);
+
+
 #endif  
