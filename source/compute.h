@@ -4,7 +4,6 @@
 #include "PlayerManager.h"
 #include "EventManager.h"
 
-
 struct possitions
 {
 	possitions(float x, float y, float z, float angle, float speed);
@@ -29,7 +28,6 @@ public:
 	virtual void setPossitions(float x, float y, float z, float angle, float speed) const = 0;
 };
 
-
 class c_PosVehicle : public IBase
 {
 public:
@@ -46,10 +44,7 @@ private:
 	float m_angle;
 	float m_speed;
 };
-
-
-
-//c_Compute .DistanceStreamSee(oject);
+ 
 class c_Compute
 {
 public:
@@ -57,8 +52,9 @@ public:
 	~c_Compute();
 		    
 	double Distance(cPed &pos_Player1, c_Event &myEvent);
-	//double DistancePlayerActorToWantVehicle(c_Player pos_Player, c_Vehicle Veh);
+	double Distance(cPed &pos_Player1, cPed &pos_Player2);
 
-  
+	//double DistancePlayerActorToWantVehicle(c_Player pos_Player, c_Vehicle Veh);
+	 
 	double DistanceStreamSee(IBase &A, IBase &B);
 };

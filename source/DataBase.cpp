@@ -3,8 +3,6 @@
 #include "dataAnswer.h"
 #include <sstream>
 
-
-
 c_Client::c_Client(boost::asio::ip::udp::endpoint& ep,
 	boost::posix_time::ptime ping)
 	: m_ep(ep)
@@ -13,11 +11,11 @@ c_Client::c_Client(boost::asio::ip::udp::endpoint& ep,
 
 }
 
-
 c_DataBaseClient_map::c_DataBaseClient_map()
 {
-	m_ComputeObj = std::make_shared <c_Compute>();
 	//std::cout << "c_DataBaseClient_map() create" << "\n";
+
+	m_ComputeObj = std::make_shared <c_Compute>();
 
 	m_sender = std::make_shared <Sender>();
 
@@ -38,10 +36,24 @@ c_DataBaseClient_map::c_DataBaseClient_map()
 
 c_DataBaseClient_map::~c_DataBaseClient_map()
 {
-	//std::cout << "~c_DataBaseClient_map() destroy" << "\n";
+	std::cout << "~c_DataBaseClient_map() destroy" << "\n";
+	Log("[c_DataBaseClient_map::~c_DataBaseClient_map()]");
 }
 
-bool c_DataBaseClient_map::refreshPlayer(cPed newInfoPlayerActor)
+std::map <int, c_Client>::iterator c_DataBaseClient_map::getClientByPort(int keyPort)
+{
+	auto it = std::find_if(m_Client_map.begin(), m_Client_map.end(),
+		[&keyPort](const std::pair<int, c_Client> &p)
+	{
+		return p.first == keyPort;
+	});
+
+	//if (it != m_Client_map.end())
+
+	return it;
+}
+
+bool c_DataBaseClient_map::refreshPlayerActor(cPed newInfoPlayerActor)
 {
 	int keyPort = newInfoPlayerActor.m_iKeyID;
 
@@ -56,6 +68,7 @@ bool c_DataBaseClient_map::refreshPlayer(cPed newInfoPlayerActor)
 		(*it).second.m_PlayerActor = newInfoPlayerActor;
 
 		std::cout << "updatePossitions" << " ";
+
 		printPlayerID(it);
 
 		return true;
@@ -63,6 +76,9 @@ bool c_DataBaseClient_map::refreshPlayer(cPed newInfoPlayerActor)
 	else
 	{		// register 
 		std::cout << "[c_DataBaseClient_map::refreshPlayerid] Ahtung Player not found." << "\n";
+
+		//addEventPlayerActorPossitionsControl(newInfoPlayerActor);
+
 		return false;
 	}
 }
@@ -111,7 +127,7 @@ void c_DataBaseClient_map::closeSocket_map(int keyPort)
 	}
 }
 
-bool c_DataBaseClient_map::OfflineUser(std::map <int, c_Client>::iterator it)
+bool c_DataBaseClient_map::isOfflineUser(std::map <int, c_Client>::iterator it)
 {
 	if (it != m_Client_map.end())
 	{
@@ -149,7 +165,6 @@ void c_DataBaseClient_map::kickOfflineUser()
 
 void c_DataBaseClient_map::printMapPlayer()
 {
-	//system("cls");
 	std::cout << "[void c_DataBaseClient_map] \t Online:" << "\n";
 	for (auto it = m_Client_map.begin(); it != m_Client_map.end(); ++it)
 	{
@@ -219,15 +234,12 @@ void c_DataBaseClient_map::updateEvent()
 
 	printStat();
 
-
-
-
 	for (int i = 0; i < m_Event.size(); i++)
 	{
 		for (auto it = m_Client_map.begin(); it != m_Client_map.end(); ++it)
 		{
 
-			if (OfflineUser(it))
+			if (isOfflineUser(it))
 			{
 				//std::cout << " удали из очереди трупа (id port " << it->second.m_ep.port() << ")\n";
 				continue;
@@ -235,14 +247,12 @@ void c_DataBaseClient_map::updateEvent()
 
 			cPed currClient = it->second.m_PlayerActor;
 
-			if (isPlayerIDdistanceSeeEvent(currClient, m_Event[i]))
+			if (isPlayerIDdistanceSeeOtherPlayerID(currClient, m_Event[i]))
 			{
-
 				// init dim Answer for client
 				//-------------------------------------------------------------------------------------------------
 				switch (m_Event[i].m_iType)
 				{
-
 				case eTypeGameObject::VEHICLE:
 
 					msg = answer.createStr(
@@ -250,7 +260,12 @@ void c_DataBaseClient_map::updateEvent()
 						, Tohex.unsignetIntToHEX(m_countPackage)
 						, m_VehManager->getHexInfoCarID(m_Event[i].m_AttachToID));
 					break;
-					 
+
+					// нормально сделай, и нормально будет
+				/*case  eTypeGameObject::PLAYER:
+					msg = answer.createStr((float)ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS, Tohex.unsignetIntToHEX(m_countPackage), it->second.m_PlayerActor.getHexInfo());
+					break;*/
+
 				default:
 					std::cout << "waring unknown game type object" << "\n";
 					break;
@@ -258,10 +273,14 @@ void c_DataBaseClient_map::updateEvent()
 				m_countPackage++;
 				//------------------------------------------------------------------------------------------------
 
-				  
+
 				m_sender->send_for(it->second.m_ep, msg);
 
-				//std::cout << "Event[" << i << "] size = " << msg.length() << " for "<< it->second.m_ep.address() << ":" << it->second.m_ep.port() << "\n";
+				std::cout 
+					<< "Event[" << i << "]"
+					<< " = " << m_Event[i].m_iType
+					<< " size = " << msg.length()
+					<< " for " << it->second.m_ep.address() << ":" << it->second.m_ep.port() << "\n";
 			}
 			else
 			{
@@ -273,65 +292,54 @@ void c_DataBaseClient_map::updateEvent()
 	}
 }
 
-
-void c_DataBaseClient_map::deltest()
+std::string c_DataBaseClient_map::SEND_EVENT_PLAYER_ACTOR_POSSITIONS_AND_CreateAnswerForCurrrientEndPointClieent(int KeyPort)
 {
+	if (m_Client_map.empty())
+		return "-1";
 
-	/*c_MyUtiles Tohex;
+	std::map <int, c_Client>::iterator currEndPointPlayer = getClientByPort(KeyPort);
 
-	std::string msg;
+	/*if (currEndPointPlayer == m_Client_map.end())
+		return;*/
 
-	msg = Tohex.floatToHEX(2.0f);
+	cPed ClientPlayerActor = currEndPointPlayer->second.m_PlayerActor;
 
-	std::stringstream byteArr(msg);
+	std::string msg = "";
 
-	float eba;
+	for (auto it = m_Client_map.begin(); it != m_Client_map.end(); ++it)
+	{
 
-	byteArr.read((char*)&eba, 4);
+		if (isOfflineUser(it))
+			continue;	//std::cout << " удали из очереди трупа (id port " << it->second.m_ep.port() << ")\n";
 
-	std::cout << "\neba =" << eba << "\n";*/
-}
+		/*if (currEndPointPlayer == it)
+			continue;*/
 
-//
-//void c_DataBaseClient_map::send_all(const std::string & msg)
-//{
-//	std::cout << "[void c_DataBaseClient_map::send_all]" << "\n";
-//
-//	/*for (auto it = m_Client_map.begin(); it != m_Client_map.end(); ++it)
-//	{ 
-//		std::cout << "send for " << it->second.ep.address() << ":" << it->second.ep.port() << "\n";
-//
-//		boost::system::error_code ignored_error;
-//		socket_.send_to(boost::asio::buffer(msg), it->second.ep, 0, ignored_error);
-//	}*/
-//}
+		cPed otherPlayerActor = it->second.m_PlayerActor;
 
-////
-////void c_Network::chekClientTimeOut()
-////{
-////	for (auto it = m_DataBasa->m_Client_map.begin();
-////		it != m_DataBasa->m_Client_map.end(); ++it)
-////	{
-////		ptime now = microsec_clock::local_time();
-////		long long ms = (now - (*it).second.last_ping).total_milliseconds();
-////		if (ms > 5000)
-////		{
-////			m_DataBasa->closeSocket_map((*it).second.ep.port());
-////			
-////			m_GameLogic->m_Player_Manager->remove_Player_Game_Info((*it).second.ep.port());
-////
-////			break;	// lol ? 
-////		}
-////	}
-////}
-//==================================================================================================
+		c_DataAnswer answer;
+		c_MyUtiles Tohex;
+		 
+		if (isPlayerIDdistanceSeeOtherPlayerID(ClientPlayerActor, otherPlayerActor))
+		{
+			msg = answer.createStr((float)ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS
+				, Tohex.unsignetIntToHEX(m_countPackage)
+				, it->second.m_PlayerActor.getHexInfo());
+ 
 
-//сClient_GameInfo::сClient_GameInfo(float  fPos_x, float fPos_y, float fPos_z, float fInterior)
-//	:m_fPos_x(fPos_x), m_fPos_y(fPos_y), m_fPos_z(fPos_z), m_fInterior(fInterior)
-//{
-//}
+			m_sender->send_for(currEndPointPlayer->second.m_ep, msg);
+			std::cout << "Event PLAYER_ACTOR_NEW_POSSITIONS " << " size = " << msg.length() << " for " << currEndPointPlayer->second.m_ep.address() << ":" << currEndPointPlayer->second.m_ep.port() << "\n";
+
+			m_countPackage++;
+		}
+	} 
+	 
 
 
+
+	return msg;
+
+}// end f()
 
 
 void c_DataBaseClient_map::addEvent(c_Event GameEvent)
@@ -347,15 +355,13 @@ int c_DataBaseClient_map::getCountEvent()
 	return m_Event.size();
 }
 
-
 void c_DataBaseClient_map::printStat()
 {
-	//system("cls");
 	std::string stat = "[c_DataBaseClient_map::printStat()]\n"
 		"Servet Data Base stat: \\"
 		"\nCount Vehicle: " + std::to_string(m_VehManager->getCountVehicle())
-		+ "\nCount Event: " + std::to_string(getCountEvent())
-		+ "\nCount Client: " + std::to_string(m_Player_Manager->getCountPlayerActor());
+		+ "\nCount Event: " + std::to_string(getCountEvent());
+	//+ "\nCount Client: " + std::to_string(m_Player_Manager->getCountPlayerActor());
 }
 
 void c_DataBaseClient_map::printMatrixEvent()
@@ -380,7 +386,38 @@ void c_DataBaseClient_map::addEventVehiclePossitionsControl(c_Vehicle vehilce)
 	addEvent(Vehicle);
 }
 
-bool c_DataBaseClient_map::isPlayerIDdistanceSeeEvent(cPed &PlayerIDActor, c_Event &Event)
+
+void c_DataBaseClient_map::addEventPlayerActorPossitionsControl(cPed Ped)
+{
+	c_Event PlayerActorPossitions(eTypeGameObject::PLAYER, Ped.m_iKeyID, Ped.m_fX, Ped.m_fY, Ped.m_fZ);
+	addEvent(PlayerActorPossitions);
+}
+
+bool c_DataBaseClient_map::updateEventPlayerPossitions(cPed ped)
+{
+	if (m_Event.empty())
+		return false;
+
+	for (int i = 0; i < m_Event.size(); i++)
+	{
+		if (m_Event[i].m_iType != eTypeGameObject::PLAYER)
+			continue;
+
+		if (m_Event[i].m_AttachToID == ped.m_iKeyID)
+		{
+
+			std::cout << "Yeah!!!" << "\n";
+
+			m_Event[i].update(ped.m_fX, ped.m_fY, ped.m_fZ);
+
+			return true;
+		}
+
+
+	}
+}
+
+bool c_DataBaseClient_map::isPlayerIDdistanceSeeOtherPlayerID(cPed &PlayerIDActor, c_Event &Event)
 {
 	float distance = m_ComputeObj->Distance(PlayerIDActor, Event);
 	if (distance < 166.6f)
@@ -388,5 +425,10 @@ bool c_DataBaseClient_map::isPlayerIDdistanceSeeEvent(cPed &PlayerIDActor, c_Eve
 	return false;
 }
 
-
-
+bool c_DataBaseClient_map::isPlayerIDdistanceSeeOtherPlayerID(cPed &PlayerIDActor1, cPed &PlayerIDActor2)
+{
+	float distance = m_ComputeObj->Distance(PlayerIDActor1, PlayerIDActor2);
+	if (distance < 166.6f)
+		return true;
+	return false;
+}

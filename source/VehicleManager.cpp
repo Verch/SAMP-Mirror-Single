@@ -1,9 +1,10 @@
 #pragma once 
 #include "VehicleManager.h"
 #include "PackageType.h"
+#include <assert.h>
 
 
-c_Vehicle::c_Vehicle(float  fServerID, float fModel, float x, float y, float z, float fAngle, float fSpeed)
+c_Vehicle::c_Vehicle(float  fServerID, float fModel, float x, float y, float z, float fAngle, float fSpeed, float color_1, float color_2)
 	:
 	m_fServerID(fServerID)
 	, m_fModel(fModel)
@@ -12,18 +13,23 @@ c_Vehicle::c_Vehicle(float  fServerID, float fModel, float x, float y, float z, 
 	, m_fZ(z)
 	, m_fAngle(fAngle)
 	, m_fSpeed(fSpeed)
+	, m_fColor_1(color_1)
+	, m_fColor_2(color_2)
 {
 
 }
 
 
-void c_Vehicle::set(float x, float y, float z, float fAngle, float fSpeed)
+void c_Vehicle::set(float x, float y, float z, float fAngle, float fSpeed, float color_1, float color_2)
 {
 	m_fX = x;
 	m_fY = y;
 	m_fZ = z;
 	m_fSpeed = fSpeed;
 	m_fAngle = fAngle;
+
+	m_fColor_1 = (color_1);
+	m_fColor_2 = (color_2);
 }
 
 void c_Vehicle::initServerID(float serverID)
@@ -74,6 +80,10 @@ c_Vehicle c_VehicleManager::createWantCar(std::stringstream& byteArr)
 	float unBox_angle = 0;	// 28
 	float unBox_speed = 0;	// 32
 
+	float unBoxColor_1 = 0;	// 36
+	float unBoxColor_2 = 0;	// 40
+
+
 	byteArr.read((char*)&unBox_model, 4);
 	byteArr.read((char*)&unBox_xPos, 4);
 	byteArr.read((char*)&unBox_yPos, 4);
@@ -81,7 +91,13 @@ c_Vehicle c_VehicleManager::createWantCar(std::stringstream& byteArr)
 	byteArr.read((char*)&unBox_angle, 4);
 	byteArr.read((char*)&unBox_speed, 4);
 
-	c_Vehicle wantCar(/*ahtung -1 = serverCArID */ -1, unBox_model, unBox_xPos, unBox_yPos, unBox_zPos, unBox_angle, unBox_speed);
+	byteArr.read((char*)&unBoxColor_1, 4);
+	byteArr.read((char*)&unBoxColor_2, 4);
+
+
+	c_Vehicle wantCar(/*ahtung -1 = serverCArID */ -1, unBox_model, unBox_xPos, unBox_yPos, unBox_zPos, unBox_angle, unBox_speed
+		, unBoxColor_1, unBoxColor_2);
+
 	return wantCar;
 }
 
@@ -104,7 +120,9 @@ std::string c_VehicleManager::getHexInfoCarID(int serverID)
 			+ myUtites.floatToHEX((*it).second.m_fY)
 			+ myUtites.floatToHEX((*it).second.m_fZ)
 			+ myUtites.floatToHEX((*it).second.m_fAngle)
-			+ myUtites.floatToHEX((*it).second.m_fSpeed);
+			+ myUtites.floatToHEX((*it).second.m_fSpeed)
+			+ myUtites.floatToHEX((*it).second.m_fColor_1)
+			+ myUtites.floatToHEX((*it).second.m_fColor_2);
 
 		myUtites.~c_MyUtiles();
 
@@ -168,7 +186,8 @@ int c_VehicleManager::getCountVehicle()
 bool c_VehicleManager::isVehicleInitCorrect(c_Vehicle &vehicle)
 {
 	if (isDefinedGameCarModel((int)vehicle.m_fModel)
-		&& isValidServerID((int)vehicle.m_fServerID))
+		&& isValidServerID((int)vehicle.m_fServerID)
+		&& isInitVehicleColor(vehicle.m_fColor_1, vehicle.m_fColor_2))
 		return true;
 
 	return false;
@@ -193,148 +212,13 @@ bool c_VehicleManager::isDefinedGameCarModel(int modelIndex)
 
 	return false;
 }
+ 
+bool c_VehicleManager::isInitVehicleColor(float color1, float color2)
+{
+	if (color1 >= 0 && color2 >= 0)
+		return true;
 
+	Log("[c_VehicleManager::isInitVehicleColor] AHTUNG, false");
 
-
-//void c_VehicleManager::refresh_vehicle_map(float fServerID, float fModel, float x, float y, float z, float fAngle, float fSpeed)
-//{
-//	int serverID = (int)fServerID;
-//
-//	std::cout << "[c_VehicleManager::refresh_vehicle_map]" << "\n";
-//	auto it = std::find_if(m_map_veh.begin(), m_map_veh.end(),
-//		[&serverID](const std::pair<int, c_Vehicle> &p)
-//	{
-//		return p.first == serverID;
-//	});
-//
-//	if (it != m_map_veh.end())
-//	{// update 	 
-//		(*it).second.set(x, y, z, fAngle, fSpeed);
-//		std::cout << "update" << "\t";
-//		printInfo(it);
-//	}
-//	else
-//	{		// register 
-//		c_Vehicle tmp(fServerID, fModel, x, y, z, fAngle, fSpeed);
-//		m_map_veh.insert(std::pair<int, c_Vehicle>(serverID, tmp));
-//		std::cout << "register car from Server Data Base" << "\n";
-//	}
-//}
-//================================================
-
-//std::string c_VehicleManager::getNewServerCarID(std::stringstream& byteArr, int messagaSize, int ByClientRemotePortKey)
-//{
-//	float fDesign = 666;
-//
-//	float servCarID = (float)m_ServIDVehList->getServerId();
-//
-//	c_MyUtiles myUtites;
-//
-//	std::string package = myUtites.floatToHEX(fDesign) + myUtites.floatToHEX(servCarID);
-//
-//	return package;
-//}
-//
-//std::string c_VehicleManager::getInfoCarByServId(std::stringstream& byteArr, int messagaSize, int ByClientRemotePortKey)
-//{
-//	std::string answer("Unknow Answer");
-//	return answer;
-//}
-//
-
-
-
-//c_Vehicle::c_Vehicle(float fModel, float x, float y, float z, float fAngle, float fSpeed)
-//	:
-//	m_fModel(fModel)
-//	, m_fX(x)
-//	, m_fY(y)
-//	, m_fZ(z)
-//	, m_fAngle(fAngle)
-//	, m_fSpeed(fSpeed)
-//{
-//	//std::cout << "[c_Vehicle::c_Vehicle] not init server Id" << "\n";
-//	m_fServerID = -1;
-//
-//	std::cout << " " << m_fModel;
-//	std::cout << " " << m_fX;
-//	std::cout << " " << m_fY;
-//	std::cout << " " << m_fZ;
-//	std::cout << " " << m_fAngle;
-//	std::cout << " " << m_fSpeed;
-//
-//}
-
-
-//c_Vehicle c_VehicleManager::unBox_want_Possitions_for_Car_Spawn(std::stringstream& byteArr)
-//{
-//	// 4
-//	// 8	
-//	float unBox_model = 0;	// 12
-//	float unBox_xPos = 0;	// 16
-//	float unBox_yPos = 0;	// 20
-//	float unBox_zPos = 0;	// 24
-//	float unBox_angle = 0;	// 28
-//	float unBox_speed = 0;	// 32
-//
-//	byteArr.read((char*)&unBox_model, 4); // not reliz
-//	byteArr.read((char*)&unBox_xPos, 4);
-//	byteArr.read((char*)&unBox_yPos, 4);
-//	byteArr.read((char*)&unBox_zPos, 4);
-//	byteArr.read((char*)&unBox_angle, 4);
-//	byteArr.read((char*)&unBox_speed, 4);
-//
-//	c_Vehicle wantCar(unBox_model, unBox_xPos, unBox_yPos, unBox_zPos, unBox_angle, unBox_speed);
-//	return wantCar;
-//}
-
-//possitions posCarSpawn(unBox_xPos, unBox_yPos, unBox_zPos);
-
-//possitions posClient = m_Player_Manager->getPlayerPossitions(ByClientRemotePortKey);
-/*	if (m_ComputeObj->DistanceStreamSee(posCarSpawn, posClient) < m_GameSetting.STREAM_DISTANCE )
-	{
-	float ServIDCar = (float)m_Veh_Manager->m_ServIDVehList->getServerId();
-	}
-	//	*/
-//		
-//
-//	 
-//}
-//
-
-//
-
-
-
-
-
-//	//std::cout << "[c_Logic::unBox_want_Possitions_for_Car_Spawn]" << "\t";
-//	if (sizeRecovByte != 32) // 8 prms
-//		return;
-//
-//	//std::cout << "Try" << "\n";
-//
-//	float unBox_model = 0;
-//	float unBox_xPos = 0;
-//	float unBox_yPos = 0;
-//	float unBox_zPos = 0;
-//	float unBox_angle = 0;
-//	float unBox_speed = 0;
-//
-//
-//	byteArr.read((char*)&unBox_model, 4);
-//	byteArr.read((char*)&unBox_xPos, 4);
-//	byteArr.read((char*)&unBox_yPos, 4);
-//	byteArr.read((char*)&unBox_zPos, 4);
-//
-//	byteArr.read((char*)&unBox_angle, 4);
-//	byteArr.read((char*)&unBox_speed, 4);
-//
-//
-//	possitions posCarSpawn(unBox_xPos, unBox_yPos, unBox_zPos);
-//
-//	possitions posClient = m_Player_Manager->getPlayerPossitions(ByClientRemotePortKey);
-//
-///*	if (m_ComputeObj->DistanceStreamSee(posCarSpawn, posClient) < m_GameSetting.STREAM_DISTANCE )
-//	{
-//		float ServIDCar = (float)m_Veh_Manager->m_ServIDVehList->getServerId();
+	return false;
+}

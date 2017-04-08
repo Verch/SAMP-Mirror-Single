@@ -18,11 +18,11 @@ class c_Vehicle
 {
 public:
 
-	c_Vehicle(float  fServerID, float fModel, float x, float y, float z, float fAngle, float fSpeed);
+	c_Vehicle(float  fServerID, float fModel, float x, float y, float z, float fAngle, float fSpeed, float color_1, float color_2);
 
 	c_Vehicle(float fModel, float x, float y, float z, float fAngle, float fSpeed);
 
-	void set(float x, float y, float z, float fAngle, float fSpeed);
+	void set(float x, float y, float z, float fAngle, float fSpeed, float color_1, float color_2);
 
 	void initServerID(float serverID);
 
@@ -33,6 +33,8 @@ public:
 	float	m_fZ;
 	float	m_fAngle;
 	float	m_fSpeed;
+	float	m_fColor_1;
+	float	m_fColor_2;
 };
 
 
@@ -53,7 +55,7 @@ public:
 	bool regVehicle(c_Vehicle Vehicle);
 
 	std::string getHexInfoCarID(int serverID);
-	 
+
 	c_Vehicle createWantCar(std::stringstream& byteArr);
 
 	void printInfo(std::map <int, c_Vehicle>::iterator it);
@@ -67,9 +69,9 @@ private:
 	bool isValidServerID(int id);
 	bool isDefinedGameCarModel(int modelIndex);
 	bool isPosittionsForCarSpawnTry();
-	 
+	bool isInitVehicleColor(float color1, float color2);
 private:
 	std::map <int, c_Vehicle>	m_map_veh;
-	
+
 };
 

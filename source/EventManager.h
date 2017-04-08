@@ -1,9 +1,15 @@
-#pragma once
+﻿#pragma once
+#include <vector>
+#include <string>
+#include "MyUtiles.h"
 
-
+class c_Vehicle;
+class  cPed;
+  	   
 enum eTypeGameObject
 {
-	VEHICLE = 1
+	VEHICLE = 1,
+	PLAYER = 2
 };
 
 class c_Event
@@ -19,35 +25,48 @@ public:
 	float m_fPosX;
 	float m_fPosY;
 	float m_fPosZ;
+
+public:
+
+	void update(float x, float y, float z)
+	{
+		m_fPosX = x;
+		m_fPosY = y;
+		m_fPosZ = z;
+
+	}
 };
 
+  
+//-------------------------------------------------------------------
+class c_EventManager
+{ 
+public:
+	c_EventManager()
+	{
+		Log("[c_EventManager::c_EventManager] Create!");
+	}
 
+	void Event_push_back(c_Event GameEvent);
 
-//#include <vector>
-	//int m_iType;
-//c_Event(float x, float y, float z, int type);
-//
-//
-//class c_EventManager
-//{
-//
-//public:
-//	c_EventManager();
-//	 
-//	void addEventVehiclePossitionsControl(c_Vehicle vehilce);
-//
-//	void sendEventEveryClient();
-// 
-//	void printMatrixEvent();
-//
-//	void send_Event();
-//
-//private:
-//	void addEvent(c_Event GameEvent);
-//
-//	void printEvent(std::vector<c_Event> Event, int index);
-// 
-//private:
-//	std::vector<c_Event> m_Event;
-//};
+	int  getCountEvent();
+	 
+	void  DebugprintMatrixEvent();
 
+	void  printEvent(std::vector<c_Event> Event, int index);
+
+	void  addEventVehiclePossitionsControl(c_Vehicle vehilce);
+
+	void  addEventPlayerActorPossitionsControl(cPed Ped);
+
+	bool  updateEventPlayerPossitions(cPed ped);
+	 
+   
+private:
+	std::vector<c_Event> m_Event;
+ 
+};
+
+//-----------------------------------------------------------------------
+
+ 

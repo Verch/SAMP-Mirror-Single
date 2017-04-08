@@ -7,16 +7,7 @@
 #include <string>
 #include <list>
 #include <map>
-
-/*
-
-GameobjectDataBase
-GameObj_DataBase
-GameObjectDataBase
-
-*/
-
-
+ 
 class GameobjectDataBase
 {
 public:

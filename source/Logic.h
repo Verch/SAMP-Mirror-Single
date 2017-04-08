@@ -26,6 +26,9 @@
 #include <sstream>
 #include <string> 
 
+class CDataAnswerManager;
+
+
 struct Game_setting
 {
 	Game_setting(float stream_distance);
@@ -54,6 +57,8 @@ public:
 	 
 public:
 	std::shared_ptr	<c_DataBaseClient_map> m_DataBase;
+	 
+	std::shared_ptr	<CDataAnswerManager> m_DataAnswerManager;
 	 
 private:
 	std::shared_ptr	<Game_setting > m_setting;

@@ -18,9 +18,9 @@ struct Point_Struct_Str
 	std::string posZ_4byte;
 	std::string angle_4byte;
 };
-
-
-class c_DataAnswerManager{
+ 
+class c_DataAnswerManager
+{
 public:
 
 	Point_Struct_Str init(cPointObject inputFloatStruct);
@@ -35,3 +35,18 @@ class c_DataAnswer{
 public:
 	std::string createStr(float fDesign, const std::string HexNumberPackage, const std::string Hex);
 };
+
+
+
+
+
+
+class CDataAnswerManager
+{
+public: 
+
+};
+
+
+
+

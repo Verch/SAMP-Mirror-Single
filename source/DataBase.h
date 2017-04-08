@@ -35,8 +35,6 @@ private:
 };
 
 
-
-
 class c_DataBaseClient_map
 {
 
@@ -49,7 +47,8 @@ public:
 	std::shared_ptr	<c_VehicleManager> m_VehManager;
 
 	std::shared_ptr	<c_PlayerManager> m_Player_Manager;
-	 
+
+
 public:
 	std::map <int, c_Client> m_Client_map;
 
@@ -57,20 +56,24 @@ public:
 	c_DataBaseClient_map();
 	~c_DataBaseClient_map();
 
+	std::map <int, c_Client>::iterator getClientByPort(int keyPort);
+
 	void refresh_ip_List(boost::asio::ip::udp::endpoint &ep); // refresh ping
 	void closeSocket_map(int port);
-	bool OfflineUser(std::map <int, c_Client>::iterator it);
+	bool isOfflineUser(std::map <int, c_Client>::iterator it);
 	void kickOfflineUser();
 
-	bool refreshPlayer(cPed);
+	bool refreshPlayerActor(cPed);
 
 	void printMapPlayer();
 
 	bool GameWorldClientInit(int ID);
-
+	   
 	cPed getPlayerID(int ID);
 
 	void updateEvent();
+	 
+	std::string SEND_EVENT_PLAYER_ACTOR_POSSITIONS_AND_CreateAnswerForCurrrientEndPointClieent(int KeyPort);
 
 	void deltest();
 
@@ -82,44 +85,27 @@ private:
 	// class c_EventManager
 public:
 	void addEventVehiclePossitionsControl(c_Vehicle vehilce);
+	void addEventPlayerActorPossitionsControl(cPed Ped);
 	void sendEventEveryClient();
+	bool updateEventPlayerPossitions(cPed ped);
 
 private:
-	bool isPlayerIDdistanceSeeEvent(cPed &PlayerIDActor, c_Event &Event);
+	bool isPlayerIDdistanceSeeOtherPlayerID(cPed &PlayerIDActor, c_Event &Event);
+	bool isPlayerIDdistanceSeeOtherPlayerID(cPed &PlayerIDActor1, cPed &PlayerIDActor2);
 
 	void printEvent(std::vector<c_Event> Event, int index);
 	void printMatrixEvent();
+
 private:
 	std::vector<c_Event> m_Event;
 	void addEvent(c_Event GameEvent);
 	int getCountEvent();
+
 	//-----------------------------------------------------------------------
+
 public:
 	void printStat();
 
 	unsigned int m_countPackage;
 };
-	 
 
-
-//
-//
-//std::shared_ptr	<c_DataBaseClient_map> m_DataBase;
-//
-//std::shared_ptr	<Sender> m_sender;
-
-
-
-/*struct c_Client
-{
-c_Client(boost::asio::ip::udp::endpoint& _ep)
-: ep(_ep)
-{
-}
-
-boost::asio::ip::udp::endpoint	ep;
-boost::posix_time::ptime		last_ping;
-bool initGameWorld = false;
-
-c_Player PayerActor;
-};*/
