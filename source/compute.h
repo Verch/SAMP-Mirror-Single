@@ -54,6 +54,9 @@ public:
 	double Distance(cPed &pos_Player1, c_Event &myEvent);
 	double Distance(cPed &pos_Player1, cPed &pos_Player2);
 
+	double Distance(CPoint3D Point1, CPoint3D Point2);
+
+
 	//double DistancePlayerActorToWantVehicle(c_Player pos_Player, c_Vehicle Veh);
 	 
 	double DistanceStreamSee(IBase &A, IBase &B);

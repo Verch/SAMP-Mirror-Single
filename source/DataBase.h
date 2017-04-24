@@ -17,10 +17,7 @@
 #include "MyUtiles.h"
 #include "compute.h"
 #include "sender.h"
-
-
-
-
+  
 class c_Client
 {
 public:
@@ -68,11 +65,15 @@ public:
 	void printMapPlayer();
 
 	bool GameWorldClientInit(int ID);
-	   
+
 	cPed getPlayerID(int ID);
 
 	void updateEvent();
-	 
+
+	void sendAnswerFor(boost::asio::ip::udp::endpoint &ep);
+
+	void sender_player_pos_v2();
+
 	std::string SEND_EVENT_PLAYER_ACTOR_POSSITIONS_AND_CreateAnswerForCurrrientEndPointClieent(int KeyPort);
 
 	void deltest();

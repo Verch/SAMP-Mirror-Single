@@ -177,9 +177,11 @@ void c_DataBaseClient_map::printPlayerID(std::map <int, c_Client>::iterator it)
 {
 	std::cout << " " << it->second.m_ep.address() << ":" << it->second.m_ep.port() << " ";
 	std::cout << " key = " << it->second.m_PlayerActor.m_iKeyID << " ";
-	std::cout << " x = " << it->second.m_PlayerActor.m_fX << " ";
-	std::cout << " y = " << it->second.m_PlayerActor.m_fY << " ";
-	std::cout << " z = " << it->second.m_PlayerActor.m_fZ << " ";
+	/*
+		std::cout << " x = " << it->second.m_PlayerActor.m_fX << " ";
+		std::cout << " y = " << it->second.m_PlayerActor.m_fY << " ";
+		std::cout << " z = " << it->second.m_PlayerActor.m_fZ << " ";
+		*/
 	std::cout << " fInterior = " << it->second.m_PlayerActor.m_fInterior << " ";
 	std::cout << " speed = " << it->second.m_PlayerActor.m_fSpeed << "";
 
@@ -262,9 +264,9 @@ void c_DataBaseClient_map::updateEvent()
 					break;
 
 					// нормально сделай, и нормально будет
-				/*case  eTypeGameObject::PLAYER:
-					msg = answer.createStr((float)ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS, Tohex.unsignetIntToHEX(m_countPackage), it->second.m_PlayerActor.getHexInfo());
-					break;*/
+					/*case  eTypeGameObject::PLAYER:
+						msg = answer.createStr((float)ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS, Tohex.unsignetIntToHEX(m_countPackage), it->second.m_PlayerActor.getHexInfo());
+						break;*/
 
 				default:
 					std::cout << "waring unknown game type object" << "\n";
@@ -276,7 +278,7 @@ void c_DataBaseClient_map::updateEvent()
 
 				m_sender->send_for(it->second.m_ep, msg);
 
-				std::cout 
+				std::cout
 					<< "Event[" << i << "]"
 					<< " = " << m_Event[i].m_iType
 					<< " size = " << msg.length()
@@ -288,6 +290,46 @@ void c_DataBaseClient_map::updateEvent()
 					i, it->second.m_ep.port());
 			}
 
+		}
+	}
+}
+
+
+void c_DataBaseClient_map::sendAnswerFor(boost::asio::ip::udp::endpoint &ep)
+{
+	if (m_Client_map.empty())
+		return;
+
+	std::map <int, c_Client>::iterator currEndPointPlayer = getClientByPort(ep.port());
+
+	
+	if (!currEndPointPlayer->second.m_PlayerActor.isInitPlayerPossitions())
+	{
+		std::cout << "[c_DataBaseClient_map::sendAnswerFor] [isOfflineUser] " << currEndPointPlayer->second.m_ep.port() << "\n";
+		Log("[c_DataBaseClient_map::sendAnswerFor] [!isInitPlayerPossitions () : ] %d", currEndPointPlayer->second.m_ep.port());
+		return;
+	}
+	 
+	CPoint3D PossitionsPlayer = currEndPointPlayer->second.m_PlayerActor.GetPossitions();
+
+	for (auto itVeh : m_VehManager->GetVehicleManager())
+	{
+		CPoint3D PossitionsVehicle = itVeh.second.GetPossitions();
+
+		float distance = m_ComputeObj->Distance(PossitionsPlayer, PossitionsVehicle);
+
+		if (distance < 166.6f)
+		{
+
+			c_MyUtiles Tohex;
+			c_DataAnswer answer;
+
+			std::string msg = answer.createStr((float)ePackageRecovSend::RPC_SERVER_VEHICLE_CAR_POSSITIONS, Tohex.unsignetIntToHEX(m_countPackage), m_VehManager->getHexInfoCarID(itVeh.second.m_fServerID ) );
+			  
+			m_sender->send_for(ep, msg);
+			 
+			std::cout << "Send! [RPC_SERVER_VEHICLE_CAR_POSSITIONS] for " << currEndPointPlayer->second.m_ep.port();
+			 
 		}
 	}
 }
@@ -319,21 +361,21 @@ std::string c_DataBaseClient_map::SEND_EVENT_PLAYER_ACTOR_POSSITIONS_AND_CreateA
 
 		c_DataAnswer answer;
 		c_MyUtiles Tohex;
-		 
+
 		if (isPlayerIDdistanceSeeOtherPlayerID(ClientPlayerActor, otherPlayerActor))
 		{
 			msg = answer.createStr((float)ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS
 				, Tohex.unsignetIntToHEX(m_countPackage)
 				, it->second.m_PlayerActor.getHexInfo());
- 
+
 
 			m_sender->send_for(currEndPointPlayer->second.m_ep, msg);
 			std::cout << "Event PLAYER_ACTOR_NEW_POSSITIONS " << " size = " << msg.length() << " for " << currEndPointPlayer->second.m_ep.address() << ":" << currEndPointPlayer->second.m_ep.port() << "\n";
 
 			m_countPackage++;
 		}
-	} 
-	 
+	}
+
 
 
 
@@ -381,7 +423,7 @@ void c_DataBaseClient_map::printEvent(std::vector<c_Event> Event, int index)
 
 void c_DataBaseClient_map::addEventVehiclePossitionsControl(c_Vehicle vehilce)
 {
-	c_Event Vehicle(eTypeGameObject::VEHICLE, vehilce.m_fServerID, vehilce.m_fX, vehilce.m_fY, vehilce.m_fZ);
+	c_Event Vehicle(eTypeGameObject::VEHICLE, vehilce.m_fServerID, vehilce.GetPossitions().GetX(), vehilce.GetPossitions().GetY(), vehilce.GetPossitions().GetZ());
 
 	addEvent(Vehicle);
 }
@@ -389,7 +431,7 @@ void c_DataBaseClient_map::addEventVehiclePossitionsControl(c_Vehicle vehilce)
 
 void c_DataBaseClient_map::addEventPlayerActorPossitionsControl(cPed Ped)
 {
-	c_Event PlayerActorPossitions(eTypeGameObject::PLAYER, Ped.m_iKeyID, Ped.m_fX, Ped.m_fY, Ped.m_fZ);
+	c_Event PlayerActorPossitions(eTypeGameObject::PLAYER, Ped.m_iKeyID, Ped.GetPossitions().GetX(), Ped.GetPossitions().GetY(), Ped.GetPossitions().GetZ());
 	addEvent(PlayerActorPossitions);
 }
 
@@ -408,7 +450,7 @@ bool c_DataBaseClient_map::updateEventPlayerPossitions(cPed ped)
 
 			std::cout << "Yeah!!!" << "\n";
 
-			m_Event[i].update(ped.m_fX, ped.m_fY, ped.m_fZ);
+			m_Event[i].update(ped.GetPossitions().GetX(), ped.GetPossitions().GetY(), ped.GetPossitions().GetZ());
 
 			return true;
 		}

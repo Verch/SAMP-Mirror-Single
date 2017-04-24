@@ -6,11 +6,12 @@
 
 c_Vehicle::c_Vehicle(float  fServerID, float fModel, float x, float y, float z, float fAngle, float fSpeed, float color_1, float color_2)
 	:
-	m_fServerID(fServerID)
+	m_Possitions(x, y, z)
+	, m_fServerID(fServerID)
 	, m_fModel(fModel)
-	, m_fX(x)
+	/*, m_fX(x)
 	, m_fY(y)
-	, m_fZ(z)
+	, m_fZ(z)*/
 	, m_fAngle(fAngle)
 	, m_fSpeed(fSpeed)
 	, m_fColor_1(color_1)
@@ -20,16 +21,42 @@ c_Vehicle::c_Vehicle(float  fServerID, float fModel, float x, float y, float z, 
 }
 
 
+
+
+c_Vehicle::c_Vehicle(float fModel, CPoint3D Possitions, float fAngle, float fSpeed, float fServerID)
+	:
+	m_Possitions(Possitions)
+	, m_fServerID(fServerID)
+	, m_fModel(fModel)
+	, m_fAngle(fAngle)
+	, m_fSpeed(fSpeed)
+{
+
+}
+
 void c_Vehicle::set(float x, float y, float z, float fAngle, float fSpeed, float color_1, float color_2)
 {
-	m_fX = x;
-	m_fY = y;
-	m_fZ = z;
+	/*	m_fX = x;
+		m_fY = y;
+		m_fZ = z;*/
+
+	m_Possitions.Set(x, y, z);
+
 	m_fSpeed = fSpeed;
 	m_fAngle = fAngle;
 
 	m_fColor_1 = (color_1);
 	m_fColor_2 = (color_2);
+}
+
+CPoint3D c_Vehicle::GetPossitions()
+{
+	return m_Possitions;
+}
+
+void c_Vehicle::SetPossitions(CPoint3D pos)
+{
+	m_Possitions = pos;
 }
 
 void c_Vehicle::initServerID(float serverID)
@@ -58,8 +85,10 @@ bool c_VehicleManager::regVehicle(c_Vehicle Vehicle)
 
 	if (it != m_map_veh.end())
 	{// update 	 
-		Log("[void c_VehicleManager::refresh_vehicle_map(c_Vehicle Vehicle)] CAR yje zaregan");
-		std::cout << "[void c_VehicleManager::refresh_vehicle_map(c_Vehicle Vehicle)] CAR yje zaregan" << "\n";
+
+		Log("[void c_VehicleManager::refresh_vehicle_map] : [Ahtung] CAR yje zaregan");
+		std::cout << "[void c_VehicleManager::refresh_vehicle_map] : [Ahtung] CAR yje zaregan" << "\n";
+
 		return false;
 	}
 	else
@@ -68,6 +97,26 @@ bool c_VehicleManager::regVehicle(c_Vehicle Vehicle)
 		return true;
 	}
 }
+
+
+bool c_VehicleManager::isRegVehicle(c_Vehicle Vehicle)
+{
+	int serverID = (int)Vehicle.m_fServerID;
+
+	auto it = std::find_if(m_map_veh.begin(), m_map_veh.end(), [&serverID](const std::pair<int, c_Vehicle> &p)
+	{
+		return p.first == serverID;
+	});
+
+	if (it != m_map_veh.end())
+		return true;	// update 	 
+	else
+		return false;
+	 
+}
+
+
+
 
 c_Vehicle c_VehicleManager::createWantCar(std::stringstream& byteArr)
 {
@@ -101,6 +150,52 @@ c_Vehicle c_VehicleManager::createWantCar(std::stringstream& byteArr)
 	return wantCar;
 }
 
+c_Vehicle c_VehicleManager::createCar(std::stringstream& byteArr)
+{
+	float unBox_model = 0;	// 12
+	float unBox_xPos = 0;	// 16
+	float unBox_yPos = 0;	// 20
+	float unBox_zPos = 0;	// 24
+	float unBox_angle = 0;	// 28
+	float unBox_speed = 0;	// 32
+	float unBoxServerID = 0;	// 36 
+
+
+	byteArr.read((char*)&unBox_model, 4);
+	byteArr.read((char*)&unBox_xPos, 4);
+	byteArr.read((char*)&unBox_yPos, 4);
+	byteArr.read((char*)&unBox_zPos, 4);
+	byteArr.read((char*)&unBox_angle, 4);
+	byteArr.read((char*)&unBox_speed, 4);
+	byteArr.read((char*)&unBoxServerID, 4);
+
+	CPoint3D Possitions(unBox_xPos, unBox_yPos, unBox_zPos);
+
+	return c_Vehicle(unBox_model, Possitions, unBox_angle, unBox_speed, unBoxServerID);
+}
+
+void c_VehicleManager::UpdateVehicle(c_Vehicle Vehicle)
+{
+	int serverID = (int)Vehicle.m_fServerID;
+
+
+	auto it = std::find_if(m_map_veh.begin(), m_map_veh.end(), [&serverID](const std::pair<int, c_Vehicle> &p)
+	{
+		return p.first == serverID;
+	});
+
+	if (it != m_map_veh.end())
+	{	// update 	 
+		CPoint3D Possitions = Vehicle.GetPossitions();
+
+		it->second.SetPossitions(Possitions);
+
+		it->second.m_fAngle = Vehicle.m_fAngle;
+		it->second.m_fSpeed = Vehicle.m_fSpeed;
+	}
+}
+
+
 std::string c_VehicleManager::getHexInfoCarID(int serverID)
 {
 	auto it = std::find_if(m_map_veh.begin(), m_map_veh.end(),
@@ -116,9 +211,9 @@ std::string c_VehicleManager::getHexInfoCarID(int serverID)
 		std::string packageAnswer =
 			myUtites.floatToHEX((*it).second.m_fServerID)
 			+ myUtites.floatToHEX((*it).second.m_fModel)
-			+ myUtites.floatToHEX((*it).second.m_fX)
-			+ myUtites.floatToHEX((*it).second.m_fY)
-			+ myUtites.floatToHEX((*it).second.m_fZ)
+			+ myUtites.floatToHEX((*it).second.GetPossitions().GetX())
+			+ myUtites.floatToHEX((*it).second.GetPossitions().GetY())
+			+ myUtites.floatToHEX((*it).second.GetPossitions().GetZ())
 			+ myUtites.floatToHEX((*it).second.m_fAngle)
 			+ myUtites.floatToHEX((*it).second.m_fSpeed)
 			+ myUtites.floatToHEX((*it).second.m_fColor_1)
@@ -140,9 +235,10 @@ void c_VehicleManager::printInfo(std::map <int, c_Vehicle>::iterator it)
 {
 	std::cout << " serverID " << (*it).second.m_fServerID;
 	std::cout << " fModel  " << (*it).second.m_fModel;
-	std::cout << " x " << (*it).second.m_fX;
-	std::cout << " y " << (*it).second.m_fY;
-	std::cout << " z " << (*it).second.m_fZ;
+	/*
+		std::cout << " x " << (*it).second.m_fX;
+		std::cout << " y " << (*it).second.m_fY;
+		std::cout << " z " << (*it).second.m_fZ;*/
 	std::cout << " angle " << (*it).second.m_fAngle;
 	std::cout << " speed " << (*it).second.m_fSpeed;
 
@@ -212,7 +308,7 @@ bool c_VehicleManager::isDefinedGameCarModel(int modelIndex)
 
 	return false;
 }
- 
+
 bool c_VehicleManager::isInitVehicleColor(float color1, float color2)
 {
 	if (color1 >= 0 && color2 >= 0)

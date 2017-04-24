@@ -55,6 +55,8 @@ public:
 
 	void refreshPlayerPossitions(std::stringstream& byteArr, int sizeRecovBy, int byClient);
 	 
+
+	void VehicleNewPossitions(std::stringstream& byteArr, int sizeRecovBy, int byClientID);
 public:
 	std::shared_ptr	<c_DataBaseClient_map> m_DataBase;
 	 

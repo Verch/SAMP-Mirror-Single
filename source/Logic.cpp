@@ -1,9 +1,9 @@
 #pragma once 
 
 #include "Logic.h"
- 
+
 #include "dataAnswer.h"
- 
+
 Game_setting::Game_setting(float stream_distance)
 	: STREAM_DISTANCE(stream_distance)
 {
@@ -17,7 +17,7 @@ c_Logic::c_Logic()
 	m_setting = std::make_shared <Game_setting>(50.0f);
 
 	m_DataBase = std::make_shared <c_DataBaseClient_map>();
-	 
+
 	m_DataAnswerManager = std::make_shared <CDataAnswerManager>();
 
 	//m_EventManagerDelegate = std::make_shared <c_EventManager>();
@@ -49,19 +49,22 @@ void c_Logic::parsing_package(const std::string & package, boost::asio::ip::udp:
 		break;
 
 	case ePackageRecovSend::RPC_VEHICLE_SPAWN:
-		Log("[ePackageRecovSend::CAR_SPAWN]");
+		Log("[c_Logic::parsing_package] [ePackageRecovSend::CAR_SPAWN]");
 		eventSpawnVehicle(byteArr, package.length(), remote_endpoint.port());
 		break;
 
 
+
 	case ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS:
 		// new!
-		Log("[ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS]");
+		Log("[c_Logic::parsing_package] [ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS]");
 		std::cout << "ePackageRecovSend::PLAYER_ACTOR_NEW_POSSITIONS" << " ";
 		refreshPlayerPossitions(byteArr, package.length(), remote_endpoint.port());
-
 		//refreshPlayerPossitions(m_EventManagerDelegate, byteArr, package.length(), remote_endpoint.port());
+		break;
 
+	case ePackageRecovSend::RECOV_VEHICLE_CAR_POSSITIONS:
+		VehicleNewPossitions(byteArr, package.length(), remote_endpoint.port());
 		break;
 
 	default:
@@ -105,13 +108,13 @@ void c_Logic::eventSpawnVehicle(std::stringstream& byteArr, int sizeRecovBy, int
 
 	if (!m_DataBase->m_VehManager->isVehicleInitCorrect(want_car))
 	{
-		Log("AHTUNG not correct init vehicle");
+		Log("[c_Logic::eventSpawnVehicle] AHTUNG not correct init vehicle");
 		return;
 	}
 
 	if (m_DataBase->m_VehManager->regVehicle(want_car))
 	{
-		std::cout << " ePackageRecovSend::CAR_SPAWN: " << "\t ";
+		std::cout << "[c_Logic::eventSpawnVehicle] ePackageRecovSend::CAR_SPAWN: " << "\t ";
 
 		m_DataBase->addEventVehiclePossitionsControl(want_car);
 	}
@@ -161,14 +164,63 @@ void c_Logic::refreshPlayerPossitions(std::stringstream& byteArr, int sizeRecovB
 	}
 
 	cPed playerActor = m_DataBase->m_Player_Manager->createPlayer(byteArr, sizeRecovBy, byClient);
-	 
+
 	m_DataBase->refreshPlayerActor(playerActor);
 
 	//m_DataBase->updateEventPlayerPossitions(playerActor);
 }
 
-/*
-void c_Logic::refreshPlayerPossitions(std::shared_ptr <c_EventManager> EventManagerDelegate,
+void c_Logic::VehicleNewPossitions(std::stringstream& byteArr, int sizeRecovBy, int byClientID)
+{
+	std::cout << "[c_Logic::VehicleNewPossitions] [case] [RECOV_VEHICLE_CAR_POSSITIONS]" << "\n";
+
+	Log("[c_Logic::VehicleNewPossitions] [case] [RECOV_VEHICLE_CAR_POSSITIONS]");
+
+	if (sizeRecovBy != 36)
+	{
+		Log("[c_Logic::VehicleNewPossitions] : bad size recovery message");
+		return;
+	}
+
+	if (!m_DataBase->GameWorldClientInit(byClientID))
+	{
+		Log("[c_Logic::VehicleNewPossitions] : AHTUNG Game World Client NOT Init");
+		return;
+	}
+
+
+
+	c_Vehicle ClientCar = m_DataBase->m_VehManager->createCar(byteArr);
+
+	// Waring Not Init Color!
+	ClientCar.m_fColor_1 = 1;
+	ClientCar.m_fColor_2 = 1;
+
+	ClientCar.DebugPrintInfo();
+
+	if (!m_DataBase->m_VehManager->isVehicleInitCorrect(ClientCar))
+	{
+		Log("AHTUNG not correct init vehicle");
+		return;
+	}
+
+
+	CPoint3D Pos = ClientCar.GetPossitions();
+
+
+	if (m_DataBase->m_VehManager->isRegVehicle(ClientCar))
+	{
+		m_DataBase->m_VehManager->UpdateVehicle(ClientCar);
+	}
+	else
+	{
+		Log("[c_Logic::VehicleNewPossitions] : AHTUNG Vehicle Not Register");
+	}
+
+}
+
+
+/*void c_Logic::refreshPlayerPossitions(std::shared_ptr <c_EventManager> EventManagerDelegate,
 std::stringstream& byteArr, int sizeRecovBy, int byClient)
 {
 if (sizeRecovBy != 28)

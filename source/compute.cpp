@@ -25,33 +25,52 @@ c_Compute::c_Compute(){}
 
 c_Compute::~c_Compute(){}
 
+
+
+
 double c_Compute::Distance(cPed &pos_Player1, c_Event &myEvent)
 {
 
-	double Distance =
+	/*double Distance =
 		sqrt(pow((pos_Player1.m_fX - myEvent.m_fPosX), 2.0))
 		+ sqrt(pow((pos_Player1.m_fY - myEvent.m_fPosY), 2.0))
 		+ sqrt(pow((pos_Player1.m_fZ - myEvent.m_fPosZ), 2.0));
 	return Distance;
+*/
+  
+	CPoint3D PossitionsPlayer_1 = pos_Player1.GetPossitions();
+
+	CPoint3D PossitionsEvent(myEvent.m_fPosX, myEvent.m_fPosY, myEvent.m_fPosZ);
+
+	return Distance(PossitionsPlayer_1, PossitionsEvent);
+
 }
 
  
 
 double c_Compute::Distance(cPed &pos_Player1, cPed &pos_Player2)
 {
-	double Distance =
+	/*double Distance =
 	      sqrt(pow((pos_Player1.m_fX - pos_Player2.m_fX), 2.0))
 		+ sqrt(pow((pos_Player1.m_fY - pos_Player2.m_fY), 2.0))
 		+ sqrt(pow((pos_Player1.m_fZ - pos_Player2.m_fZ), 2.0));
+	return Distance;*/
+
+	CPoint3D PossitionsPlayer_1 = pos_Player1.GetPossitions();
+	CPoint3D PossitionsPlayer_2 = pos_Player2.GetPossitions();
+
+	return Distance(PossitionsPlayer_1, PossitionsPlayer_2);  
+}
+ 
+double c_Compute::Distance(CPoint3D Point1, CPoint3D Point2)
+{
+	double Distance =
+		sqrt(pow((Point1.GetX() - Point2.GetX()), 2.0))
+		+ sqrt(pow((Point1.GetY() - Point2.GetY()), 2.0))
+		+ sqrt(pow((Point1.GetZ() - Point2.GetZ()), 2.0));
+
 	return Distance;
 }
-
-
-
-
-
-
-
 
 double c_Compute::DistanceStreamSee(IBase &pos_A, IBase &pos_B)
 {

@@ -6,9 +6,8 @@
 
 
 cPed::cPed(float x, float y, float z, float	fInterior, float fSpeed, int keyID, bool bInitPlayerPos)
-	: m_fX(x)
-	, m_fY(y)
-	, m_fZ(z)
+	:
+	m_Possitions(x, y, z)
 	, m_fInterior(fInterior)
 	, m_fSpeed(fSpeed)
 	, m_iKeyID(keyID)
@@ -26,9 +25,13 @@ void cPed::set(float x, float y, float z, float fInterior, float fSpeed)
 	std::cout << " z " << z << "\n";
 	std::cout << " speed " << fSpeed << "\n";*/
 
+	m_Possitions.Set(x, y, z);
+
+/*
 	m_fX = x;
 	m_fY = y;
 	m_fZ = z;
+*/
 	m_fInterior = fInterior;
 	m_fSpeed = fSpeed;
 }
@@ -60,6 +63,24 @@ cPed c_PlayerManager::createPlayer(std::stringstream& UnBoxBytePos, int messagaS
 	return tmp;
 }
 
+
+CPoint3D cPed::GetPossitions()
+{
+	return m_Possitions;
+}
+
+
+void cPed::SetPossitions(CPoint3D pos)
+{
+	m_Possitions = pos;
+}
+
+
+bool cPed::isInitPlayerPossitions()
+{
+	return m_bInitPlayerPos;
+}
+
 /*
 int c_PlayerManager::getCountPlayerActor()
 {
@@ -81,12 +102,12 @@ std::string cPed::getHexInfo()
 
 	std::string packageAnswer =
 		/* other metod add ServerTick*/
-		/* other metod add fDecision*/
-		  myUtites.floatToHEX(m_iKeyID) 
+		/* other metod add fDecision*/	
+		myUtites.floatToHEX(m_iKeyID)
 		+ myUtites.floatToHEX(fModel)
-		+ myUtites.floatToHEX(m_fX)
-		+ myUtites.floatToHEX(m_fY)
-		+ myUtites.floatToHEX(m_fZ)
+		+ myUtites.floatToHEX(GetPossitions().GetX())
+		+ myUtites.floatToHEX(GetPossitions().GetY())
+		+ myUtites.floatToHEX(GetPossitions().GetZ())
 		+ myUtites.floatToHEX(fAngle)
 		+ myUtites.floatToHEX(m_fSpeed)
 		+ myUtites.floatToHEX(m_fInterior);

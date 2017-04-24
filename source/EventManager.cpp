@@ -49,16 +49,17 @@ void c_EventManager::printEvent(std::vector<c_Event> Event, int index)
 
 void c_EventManager::addEventVehiclePossitionsControl(c_Vehicle vehilce)
 {
-	c_Event Vehicle(eTypeGameObject::VEHICLE, vehilce.m_fServerID, vehilce.m_fX, vehilce.m_fY, vehilce.m_fZ);
+	c_Event Vehicle(eTypeGameObject::VEHICLE, vehilce.m_fServerID, vehilce.GetPossitions().GetX(), vehilce.GetPossitions().GetY(), vehilce.GetPossitions().GetZ());
 
 	Event_push_back (Vehicle);
 }
 
 void c_EventManager::addEventPlayerActorPossitionsControl(cPed Ped)
 {
-	c_Event PlayerActorPossitions(eTypeGameObject::PLAYER, Ped.m_iKeyID, Ped.m_fX, Ped.m_fY, Ped.m_fZ);
+	std::cout << "?"  << "\n";
+	/*c_Event PlayerActorPossitions(eTypeGameObject::PLAYER, Ped.m_iKeyID, Ped.m_fX, Ped.m_fY, Ped.m_fZ);
 
-	Event_push_back(PlayerActorPossitions);
+	Event_push_back(PlayerActorPossitions);*/
 }
 
 bool c_EventManager::updateEventPlayerPossitions(cPed ped)
@@ -76,7 +77,7 @@ bool c_EventManager::updateEventPlayerPossitions(cPed ped)
 
 			std::cout << "Yeah!!!" << "\n";
 
-			m_Event[i].update(ped.m_fX, ped.m_fY, ped.m_fZ);
+			m_Event[i].update(ped.GetPossitions().GetX(), ped.GetPossitions().GetY(), ped.GetPossitions().GetZ());
 
 			return true;
 		}

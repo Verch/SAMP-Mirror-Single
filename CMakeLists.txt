@@ -34,7 +34,10 @@ file( GLOB SOURCE_CODE
 	source/EventManager.cpp
 	source/EventManager.h
 	source/PackageType.h
-)
+
+	source/BaseType.cpp
+	source/BaseType.h	
+	)
 source_group("" FILES ${SOURCE_CODE})
 
 option(Boost_USE_STATIC_LIBS    "Set to ON to force the use of the static libraries."                                                  ON)

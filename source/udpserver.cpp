@@ -49,19 +49,21 @@ void cUDP_Server::thrReceive()
 				throw boost::system::system_error(error);
 
 			// ----------------------------------------------------------------------------------
-			std::cout << "<- " << remote_endpoint.address() << ":" << remote_endpoint.port()
-				<< " ( receiver size byte = " << msg.length() << ") ";
-
+			std::cout << "\n<- " << remote_endpoint.address() << ":" << remote_endpoint.port()
+				<< " [receiver size byte = " << msg.length() << "]";
+			 
 			m_Logic->m_DataBase->refresh_ip_List(remote_endpoint);
 
 			m_Logic->parsing_package(msg, remote_endpoint);
-
-			//m_Logic->m_DataBase->SEND_EVENT_PLAYER_ACTOR_POSSITIONS_AND_CreateAnswerForCurrrientEndPointClieent(remote_endpoint.port());
 			 
-			m_Logic->m_DataBase->updateEvent();
-			   
+			m_Logic->m_DataBase->sendAnswerFor(remote_endpoint);
+			  
+			//m_Logic->m_DataBase->SEND_EVENT_PLAYER_ACTOR_POSSITIONS_AND_CreateAnswerForCurrrientEndPointClieent(remote_endpoint.port());
+			// It seems [кажется] work
+			//m_Logic->m_DataBase->sender_player_pos_v2();
 
 			std::string answer = "Hello KRACHIK";
+
 			sendByServer(remote_endpoint, answer);
 
 			//-----------------------------------------------------------------------------------
